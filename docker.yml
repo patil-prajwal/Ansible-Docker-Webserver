@@ -1,0 +1,55 @@
+- name: Provisioning webserver on Docker
+ 
+  hosts: all
+ 
+  gather_facts: no
+ 
+  tasks:
+  - name: Add Repo For Docker
+    yum_repository:
+      name: docker
+      description: Repo For Docker
+      baseurl: https://download.docker.com/linux/centos/7/x86_64/stable
+      gpgcheck: no
+      state: present
+
+  - name: Installing Docker Engine
+    command: dnf install -y docker-ce --nobest
+    args:
+      warn: false
+
+  - name: Install Docker Python Lib
+    pip:
+      name: "docker-py"
+      state: present
+
+  - name: Copy Web-Page
+    copy:
+      src: "slayer.html"
+      dest: "/aws/"
+
+  - name: Start Docker Service
+    service:
+      name: "docker"
+      state: started
+
+  - name: Download Image for Docker
+    docker_image:
+      name: httpd
+      tag: latest
+      source: pull
+      state: present
+
+  - name: Create Docker Cont. for Webserver
+    docker_container:
+      name: webserver1
+      image: httpd
+      exposed_ports:
+        - "80"
+      ports:
+        - "1234:80"
+      volumes:
+        - /aws:/usr/local/apache2/htdocs
+      state: started
+
+
